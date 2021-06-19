@@ -127,17 +127,9 @@ let poolTable = new Item(
 let tv = new Item(
   "TV",
   "A flat screen TV displays some sports stuff.",
-  "*sports stuff idk i dont care about sports in the slightest*",
+  "*sports stuff* idk i dont care about sports in the slightest",
   false,
-  "TV seems to be secured pretty good. I think they've finally had enough of you."
-);
-
-let stolenTVs = new Item(
-  "Stolen TVs",
-  "Several TVs just stacked haphazardly in the corner.",
-  "Why do you even have all of these?",
-  false,
-  "You have no need for these."
+  "TV seems to be secured pretty good."
 );
 
 let apartment = new Room(
@@ -148,8 +140,8 @@ let apartment = new Room(
 
 let closet = new Room(
   "Your Closet",
-  "An inexplicably large amount of TVs in here",
-  [stolenTVs]
+  "Nothing really in here except for a bunch of things you stored away thinking you may use at some point in the future but you don't so now you have amassed all this stuff for no reason. hah",
+  []
 );
 
 let homeBathroom = new Room("Home Bathroom", "Your home throne.", [toilet]);
@@ -243,7 +235,7 @@ let redStamp = new Item(
 );
 
 let redBathroom = new Room(
-  "red square's bathroom",
+  "Red Square's bathroom",
   "A terribly designed bathroom that has almost zero privacy.",
   []
 );
@@ -282,6 +274,7 @@ drunkness starts at 6/20
               red square line is too long so if you go to use bathroom when bladder is full you piss pants and lose
 */
 
+//start in your apartment(living room)
 let currentRoom = apartment;
 
 // lookup table to connect string entered to object
@@ -310,7 +303,6 @@ let itemLookup = {
   "karaoke machine": karaokeMachine,
   "pool table": poolTable,
   tv: tv,
-  "stolen tvs": stolenTVs,
   "jp's stamp": jpsStamp,
   "ake's stamp": akesStamp,
   "red square stamp": redStamp,
@@ -389,6 +381,24 @@ function useItem(itemName) {
   }
 }
 
+// drop function that will drop the requested item into the
+function drop(itemToDrop) {
+  // first check if the item is in the player's inventory
+  if (!playerInventory.includes(itemLookup[itemToDrop])) {
+    // tell player they have no such item in their inventory
+    console.log(`You cannot drop what you do not have.`);
+  } else {
+    // find the index of the item to pull from players inventory
+    let indexOfItem = playerInventory.indexOf(itemLookup[itemToDrop]);
+    // remove the item at the index provided
+    playerInventory.splice(indexOfItem, 1);
+    // then drop the item into the room's inventory
+    roomLookup[currentRoom.name.toLowerCase()].inventory.push(itemLookup[itemToDrop]);
+    // tell the player they successfully dropped the item
+    console.log(`You dropped the ${itemToDrop}.`)
+  }
+}
+
 async function game() {
   let answer = await ask("What would you like to do next?" + "\n>_");
   changeRoom(answer);
@@ -398,13 +408,10 @@ async function game() {
   `The time is 9:56 on a Saturday night.\nYou find yourself 4 shots deep in your apartment's living room during pregame. Your bladder is currently ${bladderLevel}/10 and your drunkness is ${drunkness}/20. From here you can go to your bathroom, your bedroom, or leave out the front door to Church St.`
 );
 */
-//currentRoom = redBathroom;
-//bladderLevel = 9;
-//useItem("toilet");
-//currentRoom = atmRoom;
-//playerInventory = [wallet];
-currentRoom = jpsPub;
-useItem("karaoke machine");
-useItem("tv")
-//useItem("toilet")
-//useItem("atm")
+
+//currentRoom = jpsPub;
+//useItem("karaoke machine");
+//useItem("tv")
+playerInventory = [tv, poolTable, lighter];
+drop("tv");
+drop("lighter");
