@@ -76,6 +76,8 @@ class Bar extends Room {
   }
 }
 
+let bed = new Item("Bed", "Your bed is unmade as per usual.");
+
 let wallet = new Item(
   "Wallet",
   "Your wallet which contains your license and your debit card.",
@@ -121,7 +123,7 @@ let poolTable = new Item(
   "Your standard pool table. Looks like someone left partway through a game.",
   "You have no one to play with. Big sad. ಥ_ಥ ",
   true,
-  `You took the ${this.name}. Are you seriously wearing cargo shorts? How'd you even do that?`
+  `You took the ${this.name}. Are you seriously wearing cargo shorts?`
 );
 
 let tv = new Item(
@@ -131,6 +133,8 @@ let tv = new Item(
   false,
   "TV seems to be secured pretty good."
 );
+
+let money = new Item("Money", "An undisclosed amount of money.");
 
 let apartment = new Room(
   "Apartment",
@@ -148,13 +152,13 @@ let homeBathroom = new Room("Home Bathroom", "Your home throne.", [toilet]);
 
 let bedroom = new Room(
   "Bedroom",
-  "You're in your bedroom. Your bed is unmade as per usual. Next to your bed is you nightstand on top of which lies your wallet.",
-  [wallet]
+  "You're in your bedroom. Next to your bed is you nightstand on top of which lies your wallet.",
+  [wallet, bed]
 );
 
 let churchSt = new Room(
   "Church St",
-  "A long cobblestone road whereon lies a handful of b tier bars. (JP's Pub, Red Square, Ake's Place, and Ri Ra Irish Pub)",
+  "A long cobblestone road whereon lies a handful of b tier bars. (JP's Pub, Red Square, Ake's Place)",
   [lighter]
 );
 
@@ -206,30 +210,10 @@ let akesPlace = new Bar(
   [poolTable]
 );
 
-let riraStamp = new Item(
-  "Ri Ra's Stamp",
-  "Might be a little pint o' Guinness? Hard to tell being so small.",
-  "How exactly would you use this other than entrance to Ri Ra Irish Pub?",
-  false,
-  "You can't take that."
-);
-
-let riraBathroom = new Room(
-  "Ri Ra's Bathroom",
-  "Down a flight of stairs and a long hallway to get to this bad boy. Nice little break from the mayhem upstairs.",
-  [toilet]
-);
-
-let riraIrishPub = new Bar(
-  "Ri Ra Irish Pub",
-  "A decent bar that always has some Guinness on tap. Pretty good sized, multi level dance floor and a few TVs.",
-  [tv]
-);
-
 let redStamp = new Item(
   "red square's stamp",
   "A small stamp in the shape of a square.",
-  "Truly a no use besides entering Red Square.",
+  "Truly no use besides entering Red Square.",
   false,
   "You can't take that."
 );
@@ -290,8 +274,6 @@ let roomLookup = {
   "red square's bathroom": redBathroom,
   "jp's pub": jpsPub,
   "jp's bathroom": jpsBathroom,
-  "ri ra irish pub": riraIrishPub,
-  "ri ra's bathroom": riraBathroom,
 };
 
 // lookup table for items
@@ -306,7 +288,6 @@ let itemLookup = {
   "jp's stamp": jpsStamp,
   "ake's stamp": akesStamp,
   "red square stamp": redStamp,
-  "ri ra stamp": riraStamp,
 };
 
 // lookup table for allowable room transitions in the game
@@ -315,7 +296,7 @@ let roomTransitions = {
   "home bathroom": [apartment],
   bedroom: [apartment],
   closet: [apartment],
-  "church st": [apartment, atmRoom, redSquare, akesPlace, jpsPub, riraIrishPub],
+  "church st": [apartment, atmRoom, redSquare, akesPlace, jpsPub],
   "atm room": [churchSt],
   "red square": [churchSt, redBathroom],
   "red square's bathroom": [redSquare],
@@ -323,8 +304,6 @@ let roomTransitions = {
   "jp's bathroom": [jpsPub],
   "ake's place": [churchSt, akesBathroom],
   "ake's place bathroom": [akesPlace],
-  "ri ra irish pub": [churchSt, riraBathroom],
-  "ri ra's bathroom": [riraIrishPub],
 };
 // function move between rooms
 function changeRoom(newRoom) {
@@ -332,15 +311,59 @@ function changeRoom(newRoom) {
   // check against undefined and say i don't know that if undefined
   if (roomTransitions[newRoom] === undefined) {
     console.log("I do not know that command. Please try again.");
-    // if room change is valid, move to new room
-  } else if (roomTransitions[newRoom].includes(currentRoom)) {
+
+    // else if the transition is invalid, tell the user they cannot do that
+  } else if (!roomTransitions[newRoom].includes(currentRoom)) {
+    console.log(`Sorry you cannot go to ${newRoom} from ${currentRoom}`);
+    //now for the key checks aka stamps in inventory
+  } else if (newRoom === "red square" && !playerInventory.includes(redStamp)) {
+    if (playerInventory.includes(money)) {
+      //update the current room
+      currentRoom = roomLookup[newRoom];
+      // put the red square stamp in their inventory
+      playerInventory.push(redStamp);
+      //let them know what room they are in and where they can go
+      console.log(currentRoom.lookAround());
+    } else {
+      console.log(
+        "Unless you already have our stamp you cannot enter without a cover charge."
+      );
+    }
+  } else if (newRoom === "jp's pub" && !playerInventory.includes(jpsStamp)) {
+    if (playerInventory.includes(money)) {
+      //update the current room
+      currentRoom = roomLookup[newRoom];
+      // put the red square stamp in their inventory
+      playerInventory.push(jpsStamp);
+      //let them know what room they are in and where they can go
+      console.log(currentRoom.lookAround());
+    } else {
+      console.log(
+        "Unless you already have our stamp you cannot enter without a cover charge."
+      );
+    }
+  } else if (
+    newRoom === "ake's place" &&
+    !playerInventory.includes(akesStamp)
+  ) {
+    if (playerInventory.includes(money)) {
+      //update the current room
+      currentRoom = roomLookup[newRoom];
+      // put the red square stamp in their inventory
+      playerInventory.push(akesStamp);
+      //let them know what room they are in and where they can go
+      console.log(currentRoom.lookAround());
+    } else {
+      console.log(
+        "Unless you already have our stamp you cannot enter without a cover charge."
+      );
+    }
+  } // if room change is valid, move to new room
+  else {
     //update the current room
     currentRoom = roomLookup[newRoom];
     //let them know what room they are in and where they can go
     console.log(currentRoom.lookAround());
-    // else if the transition is invalid, tell the user they cannot do that
-  } else {
-    console.log(`Sorry you cannot go to ${newRoom} from ${currentRoom}`);
   }
   return game();
 }
@@ -351,6 +374,7 @@ function useItem(itemName) {
     console.log("I do not recognize this action. Please try again.");
     // if the item you try to use is not in the current room you can't use that
   } else if (
+    !playerInventory.includes(itemLookup[itemName]) &&
     !roomLookup[currentRoom.name.toLowerCase()].inventory.includes(
       itemLookup[itemName]
     )
@@ -372,13 +396,14 @@ function useItem(itemName) {
   } else if (roomLookup[currentRoom.name] === atmRoom) {
     if (playerInventory.includes(wallet)) {
       console.log(itemLookup[itemName].use());
-      playerInventory.push("money");
+      playerInventory.push(money);
     } else {
       console.log("You must have your debit card to access the ATM.");
     }
   } else {
     console.log(itemLookup[itemName].use());
   }
+  return game();
 }
 
 // drop function that will drop the requested item into the
@@ -393,25 +418,47 @@ function drop(itemToDrop) {
     // remove the item at the index provided
     playerInventory.splice(indexOfItem, 1);
     // then drop the item into the room's inventory
-    roomLookup[currentRoom.name.toLowerCase()].inventory.push(itemLookup[itemToDrop]);
+    roomLookup[currentRoom.name.toLowerCase()].inventory.push(
+      itemLookup[itemToDrop]
+    );
     // tell the player they successfully dropped the item
-    console.log(`You dropped the ${itemToDrop}.`)
+    console.log(`You dropped the ${itemToDrop}.`);
   }
+  return game();
 }
 
 async function game() {
   let answer = await ask("What would you like to do next?" + "\n>_");
-  changeRoom(answer);
+  console.log(`You are currently ${drunkness}/20 drunk.`)
+  console.log(`Your bladder is currently ${bladderLevel}/10 full.`)
+  let inputArray = answer.toLowerCase().split(" ");
+  let action = inputArray[0];
+  let target = inputArray[1];
+  if (inputArray.length === 3) {
+    target = inputArray[1] + " " + inputArray[2];
+  }
+
+  if (action === "go" || action === "move") {
+    changeRoom(target);
+  } else if (action === "use") {
+    useItem(target);
+  } else if (action === "take") {
+    itemLookup[target].take();
+  } else if (action === "drop") {
+    drop(target);
+  } else if (action === "inventory") {
+    console.log(playerInventory.map((itemName) => {
+    return itemName.name;
+    }));
+  } 
 }
 
 /*console.log(
-  `The time is 9:56 on a Saturday night.\nYou find yourself 4 shots deep in your apartment's living room during pregame. Your bladder is currently ${bladderLevel}/10 and your drunkness is ${drunkness}/20. From here you can go to your bathroom, your bedroom, or leave out the front door to Church St.`
+  `The time is 9:56 on a Saturday night.\nYou find yourself 4 shots deep in your apartment's living room during pregame. From here you can go to your bathroom, your bedroom, or leave out the front door to Church St.`
 );
 */
 
-//currentRoom = jpsPub;
-//useItem("karaoke machine");
-//useItem("tv")
-playerInventory = [tv, poolTable, lighter];
-drop("tv");
-drop("lighter");
+/* 
+current room inventory:
+roomLookup[currentRoom.name.toLowerCase()].inventory
+*/
