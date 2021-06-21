@@ -38,10 +38,10 @@ class Item {
   // take method that will attempt to take an item and add to inventory. If the item is not takeable tell the user they cannot pickup the item
   take() {
     if (this.takeable) {
-      playerInventory.push(this.name);
-      return this.takeableDesc;
+      playerInventory.push(this);
+      console.log(`\n${this.takeableDesc}`);
     } else {
-      return this.takeableDesc;
+      console.log(`\n${this.takeableDesc}`);
     }
   }
   // use method that will allow a user to interact with the item and return its use description
@@ -57,7 +57,7 @@ class Bar extends Room {
   }
   // drink method that will add to your drunkness and your overall drink counter. if you reach drunkness of 20 you fail the game
   drink() {
-    if (drunkness < 20) {
+    if (drunkness < 12) {
       drunkness += 2;
       drinksHad += 1;
     } else {
@@ -68,15 +68,21 @@ class Bar extends Room {
     }
   } // oh yes babyyyyy
   dance() {
-    return `\n(~‾o‾)~
+    console.log(`\n(~‾o‾)~
     \n~(‾o‾)~
     \n~(‾o‾~)
     \n~(‾o‾)~
-    \n(~‾o‾)~`;
+    \n(~‾o‾)~`);
   }
 }
 
-let bed = new Item("Bed", "Your bed is unmade as per usual.");
+let bed = new Item(
+  "Bed",
+  "Your bed is unmade as per usual.",
+  `Mkay good night!`,
+  false,
+  "You cannot take your bed right now."
+);
 
 let wallet = new Item(
   "Wallet",
@@ -281,6 +287,7 @@ let itemLookup = {
   wallet: wallet,
   lighter: lighter,
   atm: atm,
+  bed: bed,
   toilet: toilet,
   "karaoke machine": karaokeMachine,
   "pool table": poolTable,
@@ -363,7 +370,7 @@ function changeRoom(newRoom) {
     //update the current room
     currentRoom = roomLookup[newRoom];
     //let them know what room they are in and where they can go
-    console.log(currentRoom.lookAround());
+    console.log(`\n${currentRoom.lookAround()}`);
   }
   return game();
 }
@@ -379,7 +386,7 @@ function useItem(itemName) {
       itemLookup[itemName]
     )
   ) {
-    console.log(`There is no ${itemLookup[itemName].name.toLowerCase()} here!`);
+    console.log(`There is no ${itemLookup[itemName].name} here!`);
     // if you don't have anything to pee out it won't use the toilet
   } else if (itemLookup[itemName] === toilet && bladderLevel === 0) {
     console.log("You have nothing left to pee! Let someone else take a turn.");
@@ -397,9 +404,13 @@ function useItem(itemName) {
     if (playerInventory.includes(wallet)) {
       console.log(itemLookup[itemName].use());
       playerInventory.push(money);
+      // if you don't have wallet in your inventory you cannot withdraw money
     } else {
       console.log("You must have your debit card to access the ATM.");
-    }
+    } //if there are no special cases, just print out the "use" of the item
+  } else if (itemLookup[itemName] === bed) {
+    console.log(itemLookup[itemName].use());
+    process.exit();
   } else {
     console.log(itemLookup[itemName].use());
   }
@@ -427,38 +438,123 @@ function drop(itemToDrop) {
   return game();
 }
 
+// async function game that handles the user input and provides the right function for the input
 async function game() {
+  // display the drunkness and bladder level every time they take any action
+  console.log(`***You are currently ${drunkness}/12 drunk.***`);
+  // display bladder level every time you take an action
+  console.log(`***Your bladder is currently ${bladderLevel}/10 full.***`);
+  // only allow certain input
+  let acceptableActions = [
+    "go",
+    "move",
+    "use",
+    "take",
+    "drop",
+    "inventory",
+    "show",
+    "examine",
+    "drink",
+    "actions",
+    "dance",
+  ];
+  // ask user what they want to do next
   let answer = await ask("What would you like to do next?" + "\n>_");
-  console.log(`You are currently ${drunkness}/20 drunk.`)
-  console.log(`Your bladder is currently ${bladderLevel}/10 full.`)
+  // split their answer into an action and a target
   let inputArray = answer.toLowerCase().split(" ");
+  // first part of the user input will be the action
   let action = inputArray[0];
+  // check their suggested action against the acceptable actions array and tell them they can use the actions keyword if they want to know how to play
+  if (!acceptableActions.includes(action)) {
+    console.log(
+      "I'm sorry, I don't understand this action. You can type 'actions' for allowable input."
+    );
+    return game();
+  }
+  // target of the action will be the 2nd part of user input
   let target = inputArray[1];
+  // if they use two words for their target, recombine the target into a string of 2 words
   if (inputArray.length === 3) {
     target = inputArray[1] + " " + inputArray[2];
   }
-
-  if (action === "go" || action === "move") {
-    changeRoom(target);
+  // assigning the action to the proper function/method based on keyword
+  if (action === "actions") {
+    console.log(acceptableActions);
+    return game(); //go or move to change rooms
+  } else if (action === "go" || action === "move") {
+    changeRoom(target); // use to use the item
   } else if (action === "use") {
-    useItem(target);
+    useItem(target); // take to attempt to take the item
   } else if (action === "take") {
     itemLookup[target].take();
+    return game();  // drop to drop the requested item into the room
   } else if (action === "drop") {
     drop(target);
+    //player can request their inventory through a couple different commands
   } else if (action === "inventory") {
-    console.log(playerInventory.map((itemName) => {
-    return itemName.name;
-    }));
-  } 
+    console.log(
+      playerInventory.map((itemName) => {
+        return itemName.name;
+      })
+    );
+    return game();
+  } else if (action === "show" && target === "inventory") {
+    console.log(
+      playerInventory.map((itemName) => {
+        return itemName.name;
+      })
+    );
+    return game();
+    // if player chooses examine
+  } else if (action === "examine") {
+    // check that the item is either in their inventory, in the room's inventory, or that the item is not undefined in the game
+    if (
+      !playerInventory.includes(itemLookup[target]) ||
+      !roomLookup[currentRoom.name.toLowerCase()].inventory.includes(
+        itemLookup[target] || itemLookup[target] === undefined
+      )
+    ) {
+      console.log("There is no such item here.");
+      return game();
+      // if item is in the game return the description of the item
+    } else {
+      console.log(itemLookup[target].description);
+      return game();
+    } // user can use the drink action as long as they are within a bar
+  } else if (action === "drink") {
+    if (
+      currentRoom === redSquare ||
+      currentRoom === akesPlace ||
+      currentRoom === jpsPub
+    ) {
+      currentRoom.drink();
+      return game();
+    } else {
+      console.log("Unfortunately there is nothing to drink here.");
+      return game();
+    } // user can use the dance action as long as they are within a bar
+  } else if (action === "dance") {
+    if (
+      currentRoom === redSquare ||
+      currentRoom === akesPlace ||
+      currentRoom === jpsPub
+    ) {
+      currentRoom.dance();
+      return game();
+    } else {
+      console.log("No dancing here! >:|");
+      return game();
+    }
+  }
 }
 
-/*console.log(
+console.log(
   `The time is 9:56 on a Saturday night.\nYou find yourself 4 shots deep in your apartment's living room during pregame. From here you can go to your bathroom, your bedroom, or leave out the front door to Church St.`
 );
-*/
 
 /* 
 current room inventory:
 roomLookup[currentRoom.name.toLowerCase()].inventory
 */
+
+game();
