@@ -11,9 +11,9 @@ function ask(questionText) {
 }
 
 let playerInventory = [];
-let bladderLevel = 3;
-let drunkness = 6;
-let drinksHad = 0;
+let bladderLevel = 2;
+let drunkness = 4;
+let gamePoints = 0;
 
 //defines the basic room
 class Room {
@@ -55,11 +55,12 @@ class Bar extends Room {
     super(name, description, roomInventory);
     //this.activities = activities; don't think this is necessary anymore
   }
-  // drink method that will add to your drunkness and your overall drink counter. if you reach drunkness of 20 you fail the game
+  // drink method that will add to your drunkness, bladder level, and game points. if you reach drunkness of 12 you fail the game
   drink() {
-    if (drunkness < 12) {
-      drunkness += 2;
-      drinksHad += 1;
+    if (drunkness < 10) {
+      drunkness += 3;
+      bladderLevel += 1;
+      gamePoints += 50;
     } else {
       console.log(
         `You've blacked out and thrown up all over yourself. You've been kicked out of the bar and are forced to walk home in shame. Game over.`
@@ -73,6 +74,7 @@ class Bar extends Room {
     \n~(‾o‾~)
     \n~(‾o‾)~
     \n(~‾o‾)~`);
+    gamePoints += 60;
   }
 }
 
@@ -129,7 +131,7 @@ let poolTable = new Item(
   "Your standard pool table. Looks like someone left partway through a game.",
   "You have no one to play with. Big sad. ಥ_ಥ ",
   true,
-  `You took the ${this.name}. Are you seriously wearing cargo shorts?`
+  `You took the pool table. Are you seriously wearing cargo shorts?`
 );
 
 let tv = new Item(
@@ -140,7 +142,7 @@ let tv = new Item(
   "TV seems to be secured pretty good."
 );
 
-let money = new Item("Money", "An undisclosed amount of money.");
+let money = new Item("Money", "An undisclosed amount of money.", "You'll have to use this elsewhere.", true, "You picked up the money.");
 
 let apartment = new Room(
   "Apartment",
@@ -158,7 +160,7 @@ let homeBathroom = new Room("Home Bathroom", "Your home throne.", [toilet]);
 
 let bedroom = new Room(
   "Bedroom",
-  "You're in your bedroom. Next to your bed is you nightstand on top of which lies your wallet.",
+  "You're in your bedroom. Next to your bed is you nightstand, on top of which lies your wallet.",
   [wallet, bed]
 );
 
@@ -236,40 +238,14 @@ let redSquare = new Bar(
   []
 );
 
-/*
-start in your living room
-bladder condition will be quarter full
-  can use bathroom in home to reduce this to 0 before leaving to the bar
-drunkness starts at 6/20
-  can go to your bathroom
-    can use toilet
-    can use sink
-  can go to your bedroom
-    can use bed and skip going out for the night, wins game immediately
-    can examine night stand
-      can pick up your wallet off the night stand
-        wallet contains license and debit card
-  can go out door to church st
-    atm
-      can get money out of atm but requires debit card
-    bunch of bars
-      bars require your license AND cover charge to get in
-        get stamped once you get in so you don't need a cover charge again
-          some bars only have beer to drink and music to listen to
-            if you drink too much beer you'll throw up
-              leaving a bar or going to the bathroom will remove one beer from your drunkness and allow you to drink more
-          one bar will have a karaoke (jps) machine that you sing sweet caroline on
-          all bars will have a bathroom you will HAVE to use
-            if you don't use the bathroom when bladder is full you'll piss pants and lose
-              red square line is too long so if you go to use bathroom when bladder is full you piss pants and lose
-*/
-
 //start in your apartment(living room)
 let currentRoom = apartment;
 
 // lookup table to connect string entered to object
 let roomLookup = {
   apartment: apartment,
+  "home bathroom": homeBathroom,
+  "living room": apartment,
   bedroom: bedroom,
   closet: closet,
   "church st": churchSt,
@@ -289,6 +265,7 @@ let itemLookup = {
   atm: atm,
   bed: bed,
   toilet: toilet,
+  money: money,
   "karaoke machine": karaokeMachine,
   "pool table": poolTable,
   tv: tv,
@@ -321,7 +298,7 @@ function changeRoom(newRoom) {
 
     // else if the transition is invalid, tell the user they cannot do that
   } else if (!roomTransitions[newRoom].includes(currentRoom)) {
-    console.log(`Sorry you cannot go to ${newRoom} from ${currentRoom}`);
+    console.log(`Sorry you cannot go to ${newRoom} from ${currentRoom.name}`);
     //now for the key checks aka stamps in inventory
   } else if (newRoom === "red square" && !playerInventory.includes(redStamp)) {
     if (playerInventory.includes(money)) {
@@ -393,7 +370,7 @@ function useItem(itemName) {
     // if you have to REALLY pee and you try to use red square bathroom, the line is too long and you lose by peeing pants
   } else if (
     roomLookup[currentRoom.name] === redBathroom &&
-    bladderLevel === 9
+    bladderLevel === 8
   ) {
     console.log(
       "The line in the bathroom was too long and now you're a little piss baby. Game over!"
@@ -410,8 +387,17 @@ function useItem(itemName) {
     } //if there are no special cases, just print out the "use" of the item
   } else if (itemLookup[itemName] === bed) {
     console.log(itemLookup[itemName].use());
+    console.log(`Your score was ${gamePoints}`)
     process.exit();
   } else {
+    // reset bladder level to 0 and add points if toilet is used
+    if (itemLookup[itemName] === toilet) {
+      bladderLevel = 0;
+      gamePoints += 35;
+    } // add points if karaoke machine is used
+    if (itemLookup[itemName] === karaokeMachine) {
+      gamePoints += 110;
+    }
     console.log(itemLookup[itemName].use());
   }
   return game();
@@ -422,7 +408,18 @@ function drop(itemToDrop) {
   // first check if the item is in the player's inventory
   if (!playerInventory.includes(itemLookup[itemToDrop])) {
     // tell player they have no such item in their inventory
-    console.log(`You cannot drop what you do not have.`);
+    console.log(`\nYou cannot drop what you do not have.`);
+  } else if (
+    itemLookup[itemToDrop] === redStamp ||
+    itemLookup[itemToDrop] === akesStamp ||
+    itemLookup[itemToDrop] === jpsStamp
+  ) {
+    // find the index of the item to pull from players inventory
+    let indexOfItem = playerInventory.indexOf(itemLookup[itemToDrop]);
+    // remove the item at the index provided and drop no where as it is being erased not dropped
+    playerInventory.splice(indexOfItem, 1);
+
+    console.log(`\nYou erased your ${itemLookup[itemToDrop].name}.`);
   } else {
     // find the index of the item to pull from players inventory
     let indexOfItem = playerInventory.indexOf(itemLookup[itemToDrop]);
@@ -433,7 +430,7 @@ function drop(itemToDrop) {
       itemLookup[itemToDrop]
     );
     // tell the player they successfully dropped the item
-    console.log(`You dropped the ${itemToDrop}.`);
+    console.log(`\nYou dropped the ${itemToDrop}.`);
   }
   return game();
 }
@@ -443,7 +440,7 @@ async function game() {
   // display the drunkness and bladder level every time they take any action
   console.log(`***You are currently ${drunkness}/12 drunk.***`);
   // display bladder level every time you take an action
-  console.log(`***Your bladder is currently ${bladderLevel}/10 full.***`);
+  console.log(`***Your bladder is currently ${bladderLevel}/8 full.***`);
   // only allow certain input
   let acceptableActions = [
     "go",
@@ -476,6 +473,12 @@ async function game() {
   // if they use two words for their target, recombine the target into a string of 2 words
   if (inputArray.length === 3) {
     target = inputArray[1] + " " + inputArray[2];
+  } else if (inputArray.length === 4) {
+    target = inputArray[1] + " " + inputArray[2] + " " + inputArray[3];
+  }
+  // decrease drunkess by 1 every time a valid action is performed
+  if (drunkness !== 0) {
+    drunkness -= 1;
   }
   // assigning the action to the proper function/method based on keyword
   if (action === "actions") {
@@ -487,7 +490,7 @@ async function game() {
     useItem(target); // take to attempt to take the item
   } else if (action === "take") {
     itemLookup[target].take();
-    return game();  // drop to drop the requested item into the room
+    return game(); // drop to drop the requested item into the room
   } else if (action === "drop") {
     drop(target);
     //player can request their inventory through a couple different commands
@@ -549,7 +552,7 @@ async function game() {
 }
 
 console.log(
-  `The time is 9:56 on a Saturday night.\nYou find yourself 4 shots deep in your apartment's living room during pregame. From here you can go to your bathroom, your bedroom, or leave out the front door to Church St.`
+  `The time is 9:56 on a Saturday night.\nYou find yourself 2 shots deep in your apartment's living room during pregame. From here you can go to the home bathroom, bedroom, closet, or leave out the front door to Church St.`
 );
 
 /* 
@@ -558,3 +561,48 @@ roomLookup[currentRoom.name.toLowerCase()].inventory
 */
 
 game();
+
+
+// INSTRUCTIONS KINDA
+
+/*
+start in your apartment (living room)
+  drunkness starts at 4/12
+  bladder condition will be 2/8
+can go to your bathroom
+  can use toilet to reduce bladder to 0 before leaving to the bar
+    add points
+can go to your bedroom
+  can use bed and skip going out for the night, wins game immediately but 35 points max
+  can examine night stand
+    can pick up your wallet off the night stand
+      wallet "contains" debit card
+can go out door to church st
+  atm room
+    can get money out of atm but requires debit card
+  bunch of bars
+    bars require cover charge (money) to get in
+      get stamped once you get in so you don't need a cover charge again
+      if you drink too much beer you'll throw up
+        any action will remove one drunkness
+    red square
+      can dance
+        add points
+      can go to bathroom
+        add points
+        if you try to use bathroom when bladder is full you pee pants cuz red square sucks and you lose
+    jp's pub
+      can use karaoke machine, not takeable
+        add points
+      can use tv, not takeable
+        yay sports
+      can go to bathroom
+        can use toilet
+          add points
+    ake's place
+      has pool table, takeable hehe, but no one to play with
+      can use tv, not takeable
+        yay sports again
+  only certain things add points
+  not really a game you "win" perse but going to bed and not puking or peeing your pants with more points means you won
+*/
