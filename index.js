@@ -209,7 +209,7 @@ let akesStamp = new Item(
 let akesBathroom = new Room(
   "Ake's Bathroom",
   "Definitely not the worst bathroom around. Thankfully there aren't any other obnoxious people in here with you.",
-  []
+  [toilet]
 );
 
 let akesPlace = new Bar(
@@ -287,7 +287,8 @@ let roomTransitions = {
   "jp's pub": [churchSt, jpsBathroom],
   "jp's bathroom": [jpsPub],
   "ake's place": [churchSt, akesBathroom],
-  "ake's place bathroom": [akesPlace],
+  // removed place from bathroom to try and fix program crash
+  "ake's bathroom": [akesPlace],
 };
 // function move between rooms
 function changeRoom(newRoom) {
@@ -489,7 +490,19 @@ async function game() {
   } else if (action === "use") {
     useItem(target); // take to attempt to take the item
   } else if (action === "take") {
-    itemLookup[target].take();
+    // make sure item is in the room you are in or that it's not undefined
+    if(!roomLookup[currentRoom.name.toLowerCase()].inventory.includes(
+      itemLookup[target] || itemLookup[target] === undefined
+    )){
+      // if not in room inventory tell them you cannot do that
+      console.log("You can't do that here!")      
+    } else{
+      // otherwise take item
+      itemLookup[target].take();
+      // and remove item from from inventory
+      let indexOfItem = roomLookup[currentRoom.name.toLowerCase()].inventory.indexOf(itemLookup[target])
+      roomLookup[currentRoom.name.toLowerCase()].inventory.splice(indexOfItem, 1)
+    }
     return game(); // drop to drop the requested item into the room
   } else if (action === "drop") {
     drop(target);
@@ -555,10 +568,6 @@ console.log(
   `The time is 9:56 on a Saturday night.\nYou find yourself 2 shots deep in your apartment's living room during pregame. From here you can go to the home bathroom, bedroom, closet, or leave out the front door to Church St.`
 );
 
-/* 
-current room inventory:
-roomLookup[currentRoom.name.toLowerCase()].inventory
-*/
 
 game();
 
