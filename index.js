@@ -450,7 +450,6 @@ async function game() {
     "take",
     "drop",
     "inventory",
-    "show",
     "examine",
     "drink",
     "actions",
@@ -508,13 +507,6 @@ async function game() {
     drop(target);
     //player can request their inventory through a couple different commands
   } else if (action === "inventory") {
-    console.log(
-      playerInventory.map((itemName) => {
-        return itemName.name;
-      })
-    );
-    return game();
-  } else if (action === "show" && target === "inventory") {
     console.log(
       playerInventory.map((itemName) => {
         return itemName.name;
