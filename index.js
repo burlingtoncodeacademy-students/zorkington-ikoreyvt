@@ -438,6 +438,11 @@ function drop(itemToDrop) {
 
 // async function game that handles the user input and provides the right function for the input
 async function game() {
+  // any time game function is called check bladder level and do with that information what we need to
+  if(bladderLevel > 8) {
+    console.log("You've surpassed the amount of beer you can drink before going to the bathroom. Unfortunately this also means you have peed your pants, nice job. Game over!")
+    process.exit();
+  }
   // display the drunkness and bladder level every time they take any action
   console.log(`***You are currently ${drunkness}/12 drunk.***`);
   // display bladder level every time you take an action
