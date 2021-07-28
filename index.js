@@ -602,6 +602,7 @@ can go out door to church st
           add points
     ake's place
       has pool table, takeable hehe, but no one to play with
+      bathroom is ake's bathroom, not ake's place bathroom
       can use tv, not takeable
         yay sports again
   only certain things add points
