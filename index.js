@@ -517,16 +517,16 @@ async function game() {
   } else if (action === "examine") {
     // check that the item is either in their inventory, in the room's inventory, or that the item is not undefined in the game
     if (
-      !playerInventory.includes(itemLookup[target]) ||
-      !roomLookup[currentRoom.name.toLowerCase()].inventory.includes(
-        itemLookup[target] || itemLookup[target] === undefined
+      playerInventory.includes(itemLookup[target]) ||
+      roomLookup[currentRoom.name.toLowerCase()].inventory.includes(
+        itemLookup[target] || itemLookup[target] !== undefined
       )
     ) {
-      console.log("There is no such item here.");
-      return game();
-      // if item is in the game return the description of the item
-    } else {
       console.log(itemLookup[target].description);
+      return game();
+      // if target is either undefined or not in player/room inventory 
+    } else {
+      console.log("There is no such item here.");
       return game();
     } // user can use the drink action as long as they are within a bar
   } else if (action === "drink") {
